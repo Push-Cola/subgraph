@@ -1,0 +1,65 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: PushColaLazyMint1
+    network: base
+    source:
+      address: "0xDbaBdf79e772E69371729169911E4860EB825b65"
+      abi: PushColaLazyMint1
+      startBlock: 18306772
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - ApprovalForAll
+        - BatchMetadataUpdate
+        - ContractURIUpdated
+        - CouponRedeemed
+        - DefaultRoyalty
+        - MetadataFrozen
+        - OwnerUpdated
+        - RoyaltyForToken
+        - TokenClaimed
+        - TokensClaimed
+        - TokensLazyMinted
+        - TransferBatch
+        - TransferSingle
+        - URI
+      abis:
+        - name: PushColaLazyMint1
+          file: ./abis/PushColaLazyMint1.json
+      eventHandlers:
+        - event: ApprovalForAll(indexed address,indexed address,bool)
+          handler: handleApprovalForAll
+        - event: BatchMetadataUpdate(uint256,uint256)
+          handler: handleBatchMetadataUpdate
+        - event: ContractURIUpdated(string,string)
+          handler: handleContractURIUpdated
+        - event: CouponRedeemed(indexed address,indexed uint256,address,uint256,address,uint256,address)
+          handler: handleCouponRedeemed
+        - event: DefaultRoyalty(indexed address,uint256)
+          handler: handleDefaultRoyalty
+        - event: MetadataFrozen()
+          handler: handleMetadataFrozen
+        - event: OwnerUpdated(indexed address,indexed address)
+          handler: handleOwnerUpdated
+        - event: RoyaltyForToken(indexed uint256,indexed address,uint256)
+          handler: handleRoyaltyForToken
+        - event: TokenClaimed(indexed address,indexed address,indexed uint256,uint256,address,address,uint256)
+          handler: handleTokenClaimed
+        - event: TokensClaimed(indexed address,indexed address,indexed uint256,uint256)
+          handler: handleTokensClaimed
+        - event: TokensLazyMinted(indexed uint256,uint256,string,bytes)
+          handler: handleTokensLazyMinted
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: URI(string,indexed uint256)
+          handler: handleURI
+      file: ./src/push-cola-lazy-mint-1.ts

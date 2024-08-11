@@ -1,0 +1,146 @@
+type ApprovalForAll @entity(immutable: true) {
+  id: Bytes!
+  _owner: Bytes! # address
+  _operator: Bytes! # address
+  _approved: Boolean! # bool
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BatchMetadataUpdate @entity(immutable: true) {
+  id: Bytes!
+  _fromTokenId: BigInt! # uint256
+  _toTokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type ContractURIUpdated @entity(immutable: true) {
+  id: Bytes!
+  prevURI: String! # string
+  newURI: String! # string
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type CouponRedeemed @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  tokenId: BigInt! # uint256
+  affiliateAddress: Bytes! # address
+  FEE: BigInt! # uint256
+  contractAddress: Bytes! # address
+  timestamp: BigInt! # uint256
+  currency: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type DefaultRoyalty @entity(immutable: true) {
+  id: Bytes!
+  newRoyaltyRecipient: Bytes! # address
+  newRoyaltyBps: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type MetadataFrozen @entity(immutable: true) {
+  id: Bytes!
+
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type OwnerUpdated @entity(immutable: true) {
+  id: Bytes!
+  prevOwner: Bytes! # address
+  newOwner: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type RoyaltyForToken @entity(immutable: true) {
+  id: Bytes!
+  tokenId: BigInt! # uint256
+  royaltyRecipient: Bytes! # address
+  royaltyBps: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokenClaimed @entity(immutable: true) {
+  id: Bytes!
+  claimer: Bytes! # address
+  receiver: Bytes! # address
+  tokenId: BigInt! # uint256
+  quantity: BigInt! # uint256
+  affiliateAddress: Bytes! # address
+  contractAddress: Bytes! # address
+  timestamp: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokensClaimed @entity(immutable: true) {
+  id: Bytes!
+  claimer: Bytes! # address
+  receiver: Bytes! # address
+  tokenId: BigInt! # uint256
+  quantityClaimed: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokensLazyMinted @entity(immutable: true) {
+  id: Bytes!
+  startTokenId: BigInt! # uint256
+  endTokenId: BigInt! # uint256
+  baseURI: String! # string
+  encryptedBaseURI: Bytes! # bytes
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TransferBatch @entity(immutable: true) {
+  id: Bytes!
+  _operator: Bytes! # address
+  _from: Bytes! # address
+  _to: Bytes! # address
+  _ids: [BigInt!]! # uint256[]
+  _values: [BigInt!]! # uint256[]
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TransferSingle @entity(immutable: true) {
+  id: Bytes!
+  _operator: Bytes! # address
+  _from: Bytes! # address
+  _to: Bytes! # address
+  _id: BigInt! # uint256
+  _value: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type URI @entity(immutable: true) {
+  id: Bytes!
+  _value: String! # string
+  _id: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
