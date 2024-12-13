@@ -9,7 +9,7 @@ import {
 import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts"
 import { ApprovalForAll } from "../generated/schema"
 import { ApprovalForAll as ApprovalForAllEvent } from "../generated/PushColaLazyMint1/PushColaLazyMint1"
-import { handleApprovalForAll } from "../src/push-cola-lazy-mint-1"
+import { handleApprovalForAll } from "../src/lazy-mint-1"
 import { createApprovalForAllEvent } from "./push-cola-lazy-mint-1-utils"
 
 // Tests structure (matchstick-as >=0.5.0)

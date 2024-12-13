@@ -1,0 +1,5 @@
+{
+    "name": "Example Metadata",
+    "description": "This is an example of metadata to be uploaded to IPFS.",
+    "image": "https://example.com/image.png"
+  }

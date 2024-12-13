@@ -1,76 +1,54 @@
-type ApprovalForAll @entity(immutable: true) {
+type User @entity(immutable: true) {
   id: Bytes!
-  _owner: Bytes! # address
-  _operator: Bytes! # address
-  _approved: Boolean! # bool
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+  coupons: [Coupon!]! @derivedFrom(field: "user")
+  affiliates: [Affiliate!]! @derivedFrom(field: "user")
 }
 
-type BatchMetadataUpdate @entity(immutable: true) {
+type Coupon @entity(immutable: true) {
   id: Bytes!
-  _fromTokenId: BigInt! # uint256
-  _toTokenId: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+  user: User!
+  address: Bytes!
+  metadata: TokenMetadata
+  maxSupply: BigInt!
+  claimExpiration: BigInt!
+  redeemExpiration: BigInt!
+  lockedBudget: BigInt!
+  currencyAddress: Bytes!
+  fee: BigInt!
+  tokenId: BigInt!
+  affiliates: [Affiliate!]! @derivedFrom(field: "coupon")
 }
 
-type ContractURIUpdated @entity(immutable: true) {
+type Affiliate @entity(immutable: true) {
   id: Bytes!
-  prevURI: String! # string
-  newURI: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+  user: User! @derivedFrom(field: "affiliates")
+  coupon: Coupon! @derivedFrom(field: "affiliates")
+  affiliateId: BigInt!
+  contractAddress: Bytes!
+  timestamp: BigInt!
+}
+
+type TokenMetadata @entity {
+  id: ID!
+  image: String
+  name: String!
+  bgColor: String
+  textColor: String
+  logo: String
+  address: String
+  qrColor: String
+  description: String
 }
 
 type CouponRedeemed @entity(immutable: true) {
   id: Bytes!
-  owner: Bytes! # address
-  tokenId: BigInt! # uint256
-  affiliateAddress: Bytes! # address
-  FEE: BigInt! # uint256
-  contractAddress: Bytes! # address
-  timestamp: BigInt! # uint256
-  currency: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type DefaultRoyalty @entity(immutable: true) {
-  id: Bytes!
-  newRoyaltyRecipient: Bytes! # address
-  newRoyaltyBps: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type MetadataFrozen @entity(immutable: true) {
-  id: Bytes!
-
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type OwnerUpdated @entity(immutable: true) {
-  id: Bytes!
-  prevOwner: Bytes! # address
-  newOwner: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type RoyaltyForToken @entity(immutable: true) {
-  id: Bytes!
-  tokenId: BigInt! # uint256
-  royaltyRecipient: Bytes! # address
-  royaltyBps: BigInt! # uint256
+  owner: Bytes!
+  tokenId: BigInt!
+  affiliateAddress: Bytes!
+  FEE: BigInt!
+  contractAddress: Bytes!
+  timestamp: BigInt!
+  currency: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
@@ -78,68 +56,13 @@ type RoyaltyForToken @entity(immutable: true) {
 
 type TokenClaimed @entity(immutable: true) {
   id: Bytes!
-  claimer: Bytes! # address
-  receiver: Bytes! # address
-  tokenId: BigInt! # uint256
-  quantity: BigInt! # uint256
-  affiliateAddress: Bytes! # address
-  contractAddress: Bytes! # address
-  timestamp: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type TokensClaimed @entity(immutable: true) {
-  id: Bytes!
-  claimer: Bytes! # address
-  receiver: Bytes! # address
-  tokenId: BigInt! # uint256
-  quantityClaimed: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type TokensLazyMinted @entity(immutable: true) {
-  id: Bytes!
-  startTokenId: BigInt! # uint256
-  endTokenId: BigInt! # uint256
-  baseURI: String! # string
-  encryptedBaseURI: Bytes! # bytes
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type TransferBatch @entity(immutable: true) {
-  id: Bytes!
-  _operator: Bytes! # address
-  _from: Bytes! # address
-  _to: Bytes! # address
-  _ids: [BigInt!]! # uint256[]
-  _values: [BigInt!]! # uint256[]
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type TransferSingle @entity(immutable: true) {
-  id: Bytes!
-  _operator: Bytes! # address
-  _from: Bytes! # address
-  _to: Bytes! # address
-  _id: BigInt! # uint256
-  _value: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type URI @entity(immutable: true) {
-  id: Bytes!
-  _value: String! # string
-  _id: BigInt! # uint256
+  claimer: Bytes!
+  receiver: Bytes!
+  tokenId: BigInt!
+  quantity: BigInt!
+  affiliateAddress: Bytes!
+  contractAddress: Bytes!
+  timestamp: BigInt!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
