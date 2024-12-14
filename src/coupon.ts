@@ -1,5 +1,7 @@
-import {  TokenMetadata } from '../generated/schema';
+import {  TokenMetadata, Affiliate } from '../generated/schema';
 import { Bytes, dataSource, json , log } from '@graphprotocol/graph-ts';
+import { Coupon, User } from '../generated/schema';
+import { AffiliateRegistered } from '../generated/templates/LazyMint1/LazyMint1';
 
 export function handleMetadata(content: Bytes): void {
 	const tokenId = dataSource.stringParam();
@@ -29,4 +31,25 @@ export function handleMetadata(content: Bytes): void {
 
     metadata.save();
   }
+}
+
+export function handleAffiliateCreated(event: AffiliateRegistered): void {
+  let user = User.load(event.params.user);
+  if (!user) {
+    user = new User(event.params.user);
+    user.save();
+  }
+
+  let coupon = Coupon.load(event.params.contractAddress);
+  if (!coupon) {
+    coupon = new Coupon(event.params.contractAddress);
+    coupon.save();
+  }
+
+  let affiliate =  new Affiliate(event.transaction.hash);
+  affiliate.affiliateId = event.params.affiliateId;
+  affiliate.user = user.id;
+  affiliate.coupon = coupon.id;
+  affiliate.contractAddress = event.params.contractAddress;
+  affiliate.save();
 }

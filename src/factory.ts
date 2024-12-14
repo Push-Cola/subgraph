@@ -24,8 +24,15 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     coupon.fee = event.params.fee;
     coupon.tokenId = event.params.tokenId;
     
-    const cid = event.params.uri.replace("https://ipfs.io/ipfs/", "");
-    coupon.metadata = cid;
+    const cid = event.params.uri.replace("ipfs://", "").split('/')[0];
+    const parts = cid.split('/');
+    if (parts.length > 1) {
+        coupon.metadata = parts[0];
+
+    } else {
+        coupon.metadata = cid;
+
+    }
 
      if (cid) {
         log.info("CID: {}", [cid]);

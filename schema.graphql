@@ -1,7 +1,6 @@
 type User @entity(immutable: true) {
   id: Bytes!
   coupons: [Coupon!]! @derivedFrom(field: "user")
-  affiliates: [Affiliate!]! @derivedFrom(field: "user")
 }
 
 type Coupon @entity(immutable: true) {
@@ -21,8 +20,8 @@ type Coupon @entity(immutable: true) {
 
 type Affiliate @entity(immutable: true) {
   id: Bytes!
-  user: User! @derivedFrom(field: "affiliates")
-  coupon: Coupon! @derivedFrom(field: "affiliates")
+  user: User! 
+  coupon: Coupon!
   affiliateId: BigInt!
   contractAddress: Bytes!
   timestamp: BigInt!
