@@ -11,20 +11,20 @@ dataSources:
     source:
       address: "0xC11679595D1Bd415b556d8E41e8b00311057d354"
       abi: LazyMintFactory
-      startBlock: 23688370
+      startBlock: 23653189
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
       language: wasm/assemblyscript
-      file: ./src/factory.ts
       entities:
-        - FactoryEvent
+        - LazyMintDeployed
       abis:
         - name: LazyMintFactory
           file: ./abis/LazyMintFactory.json
       eventHandlers:
         - event: LazyMintDeployed(indexed address,address,string,uint256,uint256,uint256,uint256,address,uint256,uint256)
           handler: handleContractCreated
+      file: ./src/factory.ts
 
 templates:
   - name: LazyMint1

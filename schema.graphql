@@ -66,3 +66,17 @@ type TokenClaimed @entity(immutable: true) {
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
+
+type LazyMintDeployed @entity {
+  id: ID!
+  creator: Bytes!
+  lazyMintAddress: Bytes!
+  uri: String!
+  maxSupply: BigInt!
+  lockedBudget: BigInt!
+  claimExpiration: BigInt!
+  redeemExpiration: BigInt!
+  currencyAddress: Bytes!
+  fee: BigInt!
+  tokenId: BigInt!
+}
