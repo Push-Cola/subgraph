@@ -1,0 +1,8 @@
+{
+  "base": {
+    "LazyMintFactory": {
+      "address": "0xC11679595D1Bd415b556d8E41e8b00311057d354",
+      "startBlock": 23653189
+    }
+  }
+}

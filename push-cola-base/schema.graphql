@@ -1,0 +1,6 @@
+type ExampleEntity @entity {
+  id: Bytes!
+  count: BigInt!
+  creator: Bytes! # address
+  lazyMintAddress: Bytes! # address
+}

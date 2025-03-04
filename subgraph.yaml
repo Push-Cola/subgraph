@@ -1,6 +1,7 @@
 specVersion: 1.0.0
 indexerHints:
   prune: auto
+description: Lazy Mint Factory Indexer
 schema:
   file: ./schema.graphql
 dataSources:
@@ -10,11 +11,12 @@ dataSources:
     source:
       address: "0xC11679595D1Bd415b556d8E41e8b00311057d354"
       abi: LazyMintFactory
-      startBlock: 23622207
+      startBlock: 23688370
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
       language: wasm/assemblyscript
+      file: ./src/factory.ts
       entities:
         - FactoryEvent
       abis:
@@ -23,7 +25,6 @@ dataSources:
       eventHandlers:
         - event: LazyMintDeployed(indexed address,address,string,uint256,uint256,uint256,uint256,address,uint256,uint256)
           handler: handleContractCreated
-      file: ./src/factory.ts
 
 templates:
   - name: LazyMint1
@@ -73,7 +74,7 @@ templates:
       file: ./src/coupon.ts
       handler: handleMetadata
       source:
-        file: /ipfs/{id} 
+        format: json
       abis:
         - name: LazyMint1
           file: ./abis/LazyMint1.json

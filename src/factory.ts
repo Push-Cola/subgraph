@@ -23,6 +23,8 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     coupon.currencyAddress = event.params.currencyAddress;
     coupon.fee = event.params.fee;
     coupon.tokenId = event.params.tokenId;
+
+    log.info("CID: {}", [event.params.uri]);
     
     const cid = event.params.uri.replace("ipfs://", "").split('/')[0];
     const parts = cid.split('/');
@@ -31,7 +33,6 @@ export function handleContractCreated(event: LazyMintDeployed): void {
 
     } else {
         coupon.metadata = cid;
-
     }
 
      if (cid) {

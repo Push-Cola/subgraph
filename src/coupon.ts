@@ -28,9 +28,9 @@ export function handleMetadata(content: Bytes): void {
     if (address) metadata.address = address.toString();
     if (description) metadata.description = description.toString();
 		if (qrColor) metadata.qrColor = qrColor.toString();
-
-    metadata.save();
   }
+
+  metadata.save();
 }
 
 export function handleAffiliateCreated(event: AffiliateRegistered): void {

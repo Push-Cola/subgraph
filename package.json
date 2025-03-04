@@ -1,5 +1,5 @@
 {
-  "name": "PushColaV5",
+  "name": "pushcolav5",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
