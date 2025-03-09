@@ -1,30 +1,56 @@
 type User @entity(immutable: true) {
   id: Bytes!
-  coupons: [Coupon!]! @derivedFrom(field: "user")
+  projects: [Project!]! @derivedFrom(field: "creator")
+  ownedCoupons: [Coupon!]! @derivedFrom(field: "owner")
+  claimedCoupons: [TokenClaimed!]! @derivedFrom(field: "receiver")
+  claimedInProjects: [Project!]! @derivedFrom(field: "uniqueClaimers")
+  affiliateFor: [Affiliate!]! @derivedFrom(field: "user")
 }
 
-type Coupon @entity(immutable: true) {
+type Project @entity(immutable: true) {
   id: Bytes!
-  user: User!
-  address: Bytes!
+  creator: User!
+  coupons: [Coupon!]! @derivedFrom(field: "project")
+  claims: [TokenClaimed!]! @derivedFrom(field: "project")
+  totalClaims: BigInt!
+  uniqueClaimers: [User!]!
+  totalBudgetLocked: BigInt!
+  totalAffiliatePayments: BigInt!
+}
+
+type Coupon @entity(immutable: false) {
+  id: Bytes!
+  project: Project!
+  owner: User!
   metadata: TokenMetadata
+  lazyMintAddress: Bytes!
+  uri: String!
   maxSupply: BigInt!
+  lockedBudget: BigInt!
   claimExpiration: BigInt!
   redeemExpiration: BigInt!
-  lockedBudget: BigInt!
   currencyAddress: Bytes!
   fee: BigInt!
   tokenId: BigInt!
+  isRedeemed: Boolean!
+  totalAffiliatePayments: BigInt!
   affiliates: [Affiliate!]! @derivedFrom(field: "coupon")
+  claims: [TokenClaimed!]! @derivedFrom(field: "coupon")
+  redemptions: [CouponRedeemed!]! @derivedFrom(field: "coupon")
 }
 
 type Affiliate @entity(immutable: true) {
   id: Bytes!
   user: User! 
   coupon: Coupon!
-  affiliateId: BigInt!
-  contractAddress: Bytes!
   timestamp: BigInt!
+  claims: [TokenClaimed!]! @derivedFrom(field: "affiliate")
+  totalClaims: BigInt!
+  uniqueClaimers: [User!]!
+  totalRedemptions: BigInt!
+  totalEarnings: BigInt!
+  totalPaidOut: BigInt!
+  pendingPayments: BigInt!
 }
 
 type TokenMetadata @entity {
@@ -41,13 +67,11 @@ type TokenMetadata @entity {
 
 type CouponRedeemed @entity(immutable: true) {
   id: Bytes!
-  owner: Bytes!
-  tokenId: BigInt!
-  affiliateAddress: Bytes!
-  FEE: BigInt!
-  contractAddress: Bytes!
+  coupon: Coupon!
+  owner: User!
+  affiliate: Affiliate
+  feeAmount: BigInt!
   timestamp: BigInt!
-  currency: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
@@ -55,28 +79,14 @@ type CouponRedeemed @entity(immutable: true) {
 
 type TokenClaimed @entity(immutable: true) {
   id: Bytes!
+  project: Project!
+  coupon: Coupon!
   claimer: Bytes!
-  receiver: Bytes!
-  tokenId: BigInt!
+  receiver: User!
   quantity: BigInt!
-  affiliateAddress: Bytes!
-  contractAddress: Bytes!
+  affiliate: Affiliate
   timestamp: BigInt!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
-}
-
-type LazyMintDeployed @entity {
-  id: ID!
-  creator: Bytes!
-  lazyMintAddress: Bytes!
-  uri: String!
-  maxSupply: BigInt!
-  lockedBudget: BigInt!
-  claimExpiration: BigInt!
-  redeemExpiration: BigInt!
-  currencyAddress: Bytes!
-  fee: BigInt!
-  tokenId: BigInt!
 }

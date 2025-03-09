@@ -1,18 +1,17 @@
 {
-  "name": "pushcolav5",
-  "license": "UNLICENSED",
+  "name": "lazymint-subgraph",
+  "version": "0.1.0",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ PushColaV5",
-    "create-local": "graph create --node http://localhost:8020/ PushColaV5",
-    "remove-local": "graph remove --node http://localhost:8020/ PushColaV5",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 PushColaV5",
-    "test": "graph test"
+    "deploy": "graph deploy --studio lazymint-subgraph",
+    "create-local": "graph create --node http://localhost:8020/ lazymint-subgraph",
+    "remove-local": "graph remove --node http://localhost:8020/ lazymint-subgraph",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 lazymint-subgraph"
   },
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.91.1",
-    "@graphprotocol/graph-ts": "0.32.0"
+    "@graphprotocol/graph-cli": "0.51.0",
+    "@graphprotocol/graph-ts": "0.31.0"
   },
   "devDependencies": {
     "matchstick-as": "0.5.0"

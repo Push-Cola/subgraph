@@ -1,4 +1,7 @@
 specVersion: 1.0.0
+features:
+  - nonFatalErrors
+  - ipfsOnEthereumContracts
 indexerHints:
   prune: auto
 description: Lazy Mint Factory Indexer
@@ -9,9 +12,9 @@ dataSources:
     name: LazyMintFactory
     network: base
     source:
-      address: "0xC11679595D1Bd415b556d8E41e8b00311057d354"
+      address: "0x4ED099ab3fd90CE6607C4412afa7F6f1645A63fD"
       abi: LazyMintFactory
-      startBlock: 23653189
+      startBlock: 27337189
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -63,9 +66,11 @@ templates:
           handler: handleTokenClaimed
         - event: AffiliateRegistered(indexed address,uint256,address,uint256,uint256)
           handler: handleAffiliateRegistered
-      file: ./src/lazy-mint-1.ts
+      file: ./src/coupon.ts
   - name: TokenMetadata
     kind: file/ipfs
+    source:
+      url: "https://gateway.pinata.cloud/ipfs/"
     mapping:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
@@ -73,8 +78,6 @@ templates:
         - TokenMetadata
       file: ./src/coupon.ts
       handler: handleMetadata
-      source:
-        format: json
       abis:
         - name: LazyMint1
           file: ./abis/LazyMint1.json
