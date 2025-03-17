@@ -1,4 +1,4 @@
-import { TokenMetadata, Affiliate, CouponRedeemed, TokenClaimed } from '../generated/schema';
+import { TokenMetadata, Affiliate, CouponRedeemed, TokenClaimed, Location, Attribute } from '../generated/schema';
 import { Bytes, dataSource, json, log, BigInt, TypedMap, Value, BigDecimal, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
 import { Coupon, User, Project } from '../generated/schema';
 import { 
@@ -12,6 +12,7 @@ export function handleMetadata(content: Bytes): void {
 	
 	// Check if metadata already exists
 	let tokenMetadata = TokenMetadata.load(tokenId);
+	
 	if (tokenMetadata == null) {
 		tokenMetadata = new TokenMetadata(tokenId);
 		tokenMetadata.name = 'Unnamed Token'; // Set default name
@@ -64,13 +65,14 @@ export function handleMetadata(content: Bytes): void {
 		if (name && !name.isNull() && name.kind == JSONValueKind.STRING) tokenMetadata.name = name.toString();
 		if (description && !description.isNull() && description.kind == JSONValueKind.STRING) tokenMetadata.description = description.toString();
 		if (image && !image.isNull() && image.kind == JSONValueKind.STRING) tokenMetadata.image = image.toString();
-		if (backgroundColor && !backgroundColor.isNull() && backgroundColor.kind == JSONValueKind.STRING) tokenMetadata.bgColor = backgroundColor.toString();
+		if (backgroundColor && !backgroundColor.isNull() && backgroundColor.kind == JSONValueKind.STRING) tokenMetadata.backgroundColor = backgroundColor.toString();
 		if (textColor && !textColor.isNull() && textColor.kind == JSONValueKind.STRING) tokenMetadata.textColor = textColor.toString();
 		if (visibility && !visibility.isNull() && visibility.kind == JSONValueKind.STRING) tokenMetadata.visibility = visibility.toString();
 		if (category && !category.isNull() && category.kind == JSONValueKind.STRING) tokenMetadata.category = category.toString();
 
 		// Set location fields if available
 		if (locationObj) {
+			let location = new Location(tokenId + '-location');
 			const address1 = locationObj.get('address1');
 			const address2 = locationObj.get('address2');
 			const formattedAddress = locationObj.get('formattedAddress');
@@ -81,15 +83,18 @@ export function handleMetadata(content: Bytes): void {
 			const lat = locationObj.get('lat');
 			const lng = locationObj.get('lng');
 
-			if (address1 && !address1.isNull() && address1.kind == JSONValueKind.STRING) tokenMetadata.address1 = address1.toString();
-			if (address2 && !address2.isNull() && address2.kind == JSONValueKind.STRING) tokenMetadata.address2 = address2.toString();
-			if (formattedAddress && !formattedAddress.isNull() && formattedAddress.kind == JSONValueKind.STRING) tokenMetadata.formattedAddress = formattedAddress.toString();
-			if (city && !city.isNull() && city.kind == JSONValueKind.STRING) tokenMetadata.city = city.toString();
-			if (region && !region.isNull() && region.kind == JSONValueKind.STRING) tokenMetadata.region = region.toString();
-			if (postalCode && !postalCode.isNull() && postalCode.kind == JSONValueKind.STRING) tokenMetadata.postalCode = postalCode.toString();
-			if (country && !country.isNull() && country.kind == JSONValueKind.STRING) tokenMetadata.country = country.toString();
-			if (lat && !lat.isNull() && lat.kind == JSONValueKind.STRING) tokenMetadata.lat = BigDecimal.fromString(lat.toString());
-			if (lng && !lng.isNull() && lng.kind == JSONValueKind.STRING) tokenMetadata.lng = BigDecimal.fromString(lng.toString());
+			if (address1 && !address1.isNull() && address1.kind == JSONValueKind.STRING) location.address1 = address1.toString();
+			if (address2 && !address2.isNull() && address2.kind == JSONValueKind.STRING) location.address2 = address2.toString();
+			if (formattedAddress && !formattedAddress.isNull() && formattedAddress.kind == JSONValueKind.STRING) location.formattedAddress = formattedAddress.toString();
+			if (city && !city.isNull() && city.kind == JSONValueKind.STRING) location.city = city.toString();
+			if (region && !region.isNull() && region.kind == JSONValueKind.STRING) location.region = region.toString();
+			if (postalCode && !postalCode.isNull() && postalCode.kind == JSONValueKind.STRING) location.postalCode = postalCode.toString();
+			if (country && !country.isNull() && country.kind == JSONValueKind.STRING) location.country = country.toString();
+			if (lat && !lat.isNull() && lat.kind == JSONValueKind.STRING) location.lat = BigDecimal.fromString(lat.toString());
+			if (lng && !lng.isNull() && lng.kind == JSONValueKind.STRING) location.lng = BigDecimal.fromString(lng.toString());
+			
+			location.save();
+			tokenMetadata.location = location.id;
 		}
 
 		// Set date fields
@@ -107,7 +112,11 @@ export function handleMetadata(content: Bytes): void {
 				
 				if (traitType && !traitType.isNull() && traitType.kind == JSONValueKind.STRING && 
 					traitValue && !traitValue.isNull() && traitValue.kind == JSONValueKind.STRING) {
-					processedAttributes.push(traitType.toString() + ':' + traitValue.toString());
+					let newAttribute = new Attribute(tokenId + '-attribute-' + i.toString());
+					newAttribute.traitType = traitType.toString();
+					newAttribute.value = traitValue.toString();
+					newAttribute.save();
+					processedAttributes.push(newAttribute.id);
 				}
 			}
 			tokenMetadata.attributes = processedAttributes;

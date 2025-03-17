@@ -55,16 +55,22 @@ type Affiliate @entity(immutable: true) {
 
 type TokenMetadata @entity {
   id: ID!
-  image: String
   name: String!
-  bgColor: String
-  textColor: String
-  logo: String
-  address: String
-  qrColor: String
   description: String
+  image: String
+  backgroundColor: String
+  textColor: String
   visibility: String
   category: String
+  location: Location
+  claimStartDate: BigInt
+  claimExpirationDate: BigInt
+  couponExpirationDate: BigInt
+  attributes: [Attribute!]
+}
+
+type Location @entity {
+  id: ID!
   address1: String
   address2: String
   formattedAddress: String
@@ -74,10 +80,12 @@ type TokenMetadata @entity {
   country: String
   lat: BigDecimal
   lng: BigDecimal
-  claimStartDate: BigInt
-  claimExpirationDate: BigInt
-  couponExpirationDate: BigInt
-  attributes: [String!]
+}
+
+type Attribute @entity {
+  id: ID!
+  traitType: String
+  value: String
 }
 
 type CouponRedeemed @entity(immutable: true) {
