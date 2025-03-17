@@ -15,6 +15,8 @@ dataSources:
       address: "0x4ED099ab3fd90CE6607C4412afa7F6f1645A63fD"
       abi: LazyMintFactory
       startBlock: 27337189
+    provider:
+      url: "https://base-mainnet.g.alchemy.com/v2/AiHJp8DqQ6baXmRekNj8FJ37igYDqsdg"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

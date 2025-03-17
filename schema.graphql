@@ -63,6 +63,21 @@ type TokenMetadata @entity {
   address: String
   qrColor: String
   description: String
+  visibility: String
+  category: String
+  address1: String
+  address2: String
+  formattedAddress: String
+  city: String
+  region: String
+  postalCode: String
+  country: String
+  lat: BigDecimal
+  lng: BigDecimal
+  claimStartDate: BigInt
+  claimExpirationDate: BigInt
+  couponExpirationDate: BigInt
+  attributes: [String!]
 }
 
 type CouponRedeemed @entity(immutable: true) {

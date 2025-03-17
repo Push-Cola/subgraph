@@ -1,5 +1,5 @@
 import { TokenMetadata, Affiliate, CouponRedeemed, TokenClaimed } from '../generated/schema';
-import { Bytes, dataSource, json, log, BigInt } from '@graphprotocol/graph-ts';
+import { Bytes, dataSource, json, log, BigInt, TypedMap, Value, BigDecimal, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
 import { Coupon, User, Project } from '../generated/schema';
 import { 
 	AffiliateRegistered,
@@ -32,26 +32,86 @@ export function handleMetadata(content: Bytes): void {
 
 	let value = jsonResult.value.toObject();
 	if (value) {
-		const image = value.get('image');
+		// Basic fields
 		const name = value.get('name');
-		const bgColor = value.get('bgColor');
-		const textColor = value.get('textColor');
-		const logo = value.get('logo');
-		const address = value.get('address');
 		const description = value.get('description');
-		const qrColor = value.get('qrColor');
+		const image = value.get('image');
+		const backgroundColor = value.get('backgroundColor');
+		const textColor = value.get('textColor');
+		const visibility = value.get('visibility');
+		const category = value.get('category');
 
-		if (name && !name.isNull()) {
-			tokenMetadata.name = name.toString();
+		// Location object
+		const location = value.get('location');
+		let locationObj: TypedMap<string, JSONValue> | null = null;
+		if (location && !location.isNull()) {
+			locationObj = location.toObject();
 		}
 
-		if (image && !image.isNull()) tokenMetadata.image = image.toString();
-		if (bgColor && !bgColor.isNull()) tokenMetadata.bgColor = bgColor.toString();
-		if (textColor && !textColor.isNull()) tokenMetadata.textColor = textColor.toString();
-		if (logo && !logo.isNull()) tokenMetadata.logo = logo.toString();
-		if (address && !address.isNull()) tokenMetadata.address = address.toString();
-		if (description && !description.isNull()) tokenMetadata.description = description.toString();
-		if (qrColor && !qrColor.isNull()) tokenMetadata.qrColor = qrColor.toString();
+		// Dates
+		const claimStartDate = value.get('claimStartDate');
+		const claimExpirationDate = value.get('claimExpirationDate');
+		const couponExpirationDate = value.get('couponExpirationDate');
+
+		// Attributes array
+		const attributes = value.get('attributes');
+		let attributesArray: Array<JSONValue> | null = null;
+		if (attributes && !attributes.isNull()) {
+			attributesArray = attributes.toArray();
+		}
+
+		// Set basic fields
+		if (name && !name.isNull() && name.kind == JSONValueKind.STRING) tokenMetadata.name = name.toString();
+		if (description && !description.isNull() && description.kind == JSONValueKind.STRING) tokenMetadata.description = description.toString();
+		if (image && !image.isNull() && image.kind == JSONValueKind.STRING) tokenMetadata.image = image.toString();
+		if (backgroundColor && !backgroundColor.isNull() && backgroundColor.kind == JSONValueKind.STRING) tokenMetadata.bgColor = backgroundColor.toString();
+		if (textColor && !textColor.isNull() && textColor.kind == JSONValueKind.STRING) tokenMetadata.textColor = textColor.toString();
+		if (visibility && !visibility.isNull() && visibility.kind == JSONValueKind.STRING) tokenMetadata.visibility = visibility.toString();
+		if (category && !category.isNull() && category.kind == JSONValueKind.STRING) tokenMetadata.category = category.toString();
+
+		// Set location fields if available
+		if (locationObj) {
+			const address1 = locationObj.get('address1');
+			const address2 = locationObj.get('address2');
+			const formattedAddress = locationObj.get('formattedAddress');
+			const city = locationObj.get('city');
+			const region = locationObj.get('region');
+			const postalCode = locationObj.get('postalCode');
+			const country = locationObj.get('country');
+			const lat = locationObj.get('lat');
+			const lng = locationObj.get('lng');
+
+			if (address1 && !address1.isNull() && address1.kind == JSONValueKind.STRING) tokenMetadata.address1 = address1.toString();
+			if (address2 && !address2.isNull() && address2.kind == JSONValueKind.STRING) tokenMetadata.address2 = address2.toString();
+			if (formattedAddress && !formattedAddress.isNull() && formattedAddress.kind == JSONValueKind.STRING) tokenMetadata.formattedAddress = formattedAddress.toString();
+			if (city && !city.isNull() && city.kind == JSONValueKind.STRING) tokenMetadata.city = city.toString();
+			if (region && !region.isNull() && region.kind == JSONValueKind.STRING) tokenMetadata.region = region.toString();
+			if (postalCode && !postalCode.isNull() && postalCode.kind == JSONValueKind.STRING) tokenMetadata.postalCode = postalCode.toString();
+			if (country && !country.isNull() && country.kind == JSONValueKind.STRING) tokenMetadata.country = country.toString();
+			if (lat && !lat.isNull() && lat.kind == JSONValueKind.STRING) tokenMetadata.lat = BigDecimal.fromString(lat.toString());
+			if (lng && !lng.isNull() && lng.kind == JSONValueKind.STRING) tokenMetadata.lng = BigDecimal.fromString(lng.toString());
+		}
+
+		// Set date fields
+		if (claimStartDate && !claimStartDate.isNull() && claimStartDate.kind == JSONValueKind.NUMBER) tokenMetadata.claimStartDate = claimStartDate.toBigInt();
+		if (claimExpirationDate && !claimExpirationDate.isNull() && claimExpirationDate.kind == JSONValueKind.NUMBER) tokenMetadata.claimExpirationDate = claimExpirationDate.toBigInt();
+		if (couponExpirationDate && !couponExpirationDate.isNull() && couponExpirationDate.kind == JSONValueKind.NUMBER) tokenMetadata.couponExpirationDate = couponExpirationDate.toBigInt();
+
+		// Process attributes
+		if (attributesArray) {
+			let processedAttributes: string[] = [];
+			for (let i = 0; i < attributesArray.length; i++) {
+				let attribute = attributesArray[i].toObject();
+				let traitType = attribute.get('trait_type');
+				let traitValue = attribute.get('value');
+				
+				if (traitType && !traitType.isNull() && traitType.kind == JSONValueKind.STRING && 
+					traitValue && !traitValue.isNull() && traitValue.kind == JSONValueKind.STRING) {
+					processedAttributes.push(traitType.toString() + ':' + traitValue.toString());
+				}
+			}
+			tokenMetadata.attributes = processedAttributes;
+		}
 
 		log.info('Successfully processed metadata for token {}', [tokenId]);
 	} else {
