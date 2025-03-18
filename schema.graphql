@@ -7,13 +7,15 @@ type User @entity(immutable: true) {
   affiliateFor: [Affiliate!]! @derivedFrom(field: "user")
 }
 
-type Project @entity(immutable: true) {
+type Project @entity(immutable: false) {
   id: Bytes!
   creator: User!
+  name: String!
+  createdAt: BigInt!
   coupons: [Coupon!]! @derivedFrom(field: "project")
   claims: [TokenClaimed!]! @derivedFrom(field: "project")
-  totalClaims: BigInt!
   uniqueClaimers: [User!]!
+  totalClaims: BigInt!
   totalBudgetLocked: BigInt!
   totalAffiliatePayments: BigInt!
 }
@@ -74,12 +76,31 @@ type Location @entity {
   address1: String
   address2: String
   formattedAddress: String
-  city: String
+  city: City!
   region: String
   postalCode: String
-  country: String
+  country: Country!
   lat: BigDecimal
   lng: BigDecimal
+  coupons: [TokenMetadata!]! @derivedFrom(field: "location")
+}
+
+type City @entity {
+  id: Bytes!
+  name: String!
+  region: String
+  country: Country!
+  locations: [Location!]! @derivedFrom(field: "city")
+  totalCoupons: BigInt!
+}
+
+type Country @entity {
+  id: Bytes!
+  name: String!
+  code: String!
+  cities: [City!]! @derivedFrom(field: "country")
+  locations: [Location!]! @derivedFrom(field: "country")
+  totalCoupons: BigInt!
 }
 
 type Attribute @entity {

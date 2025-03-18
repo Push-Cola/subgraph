@@ -1,5 +1,5 @@
-import { TokenMetadata, Affiliate, CouponRedeemed, TokenClaimed, Location, Attribute } from '../generated/schema';
-import { Bytes, dataSource, json, log, BigInt, TypedMap, Value, BigDecimal, JSONValue, JSONValueKind } from '@graphprotocol/graph-ts';
+import { TokenMetadata, Affiliate, CouponRedeemed, TokenClaimed, Location, Attribute, City, Country } from '../generated/schema';
+import { Bytes, dataSource, json, log, BigInt, TypedMap, Value, BigDecimal, JSONValue, JSONValueKind, crypto } from '@graphprotocol/graph-ts';
 import { Coupon, User, Project } from '../generated/schema';
 import { 
 	AffiliateRegistered,
@@ -76,22 +76,59 @@ export function handleMetadata(content: Bytes): void {
 			const address1 = locationObj.get('address1');
 			const address2 = locationObj.get('address2');
 			const formattedAddress = locationObj.get('formattedAddress');
-			const city = locationObj.get('city');
+			const cityName = locationObj.get('city');
 			const region = locationObj.get('region');
 			const postalCode = locationObj.get('postalCode');
-			const country = locationObj.get('country');
+			const countryName = locationObj.get('country');
 			const lat = locationObj.get('lat');
 			const lng = locationObj.get('lng');
 
 			if (address1 && !address1.isNull() && address1.kind == JSONValueKind.STRING) location.address1 = address1.toString();
 			if (address2 && !address2.isNull() && address2.kind == JSONValueKind.STRING) location.address2 = address2.toString();
 			if (formattedAddress && !formattedAddress.isNull() && formattedAddress.kind == JSONValueKind.STRING) location.formattedAddress = formattedAddress.toString();
-			if (city && !city.isNull() && city.kind == JSONValueKind.STRING) location.city = city.toString();
 			if (region && !region.isNull() && region.kind == JSONValueKind.STRING) location.region = region.toString();
 			if (postalCode && !postalCode.isNull() && postalCode.kind == JSONValueKind.STRING) location.postalCode = postalCode.toString();
-			if (country && !country.isNull() && country.kind == JSONValueKind.STRING) location.country = country.toString();
 			if (lat && !lat.isNull() && lat.kind == JSONValueKind.STRING) location.lat = BigDecimal.fromString(lat.toString());
 			if (lng && !lng.isNull() && lng.kind == JSONValueKind.STRING) location.lng = BigDecimal.fromString(lng.toString());
+
+			// Handle Country
+			if (countryName && !countryName.isNull() && countryName.kind == JSONValueKind.STRING) {
+				let countryNameStr = countryName.toString();
+				// Create a hash-based ID for the country
+				let countryIdBytes = Bytes.fromByteArray(crypto.keccak256(Bytes.fromUTF8(countryNameStr.toLowerCase())));
+				let country = Country.load(countryIdBytes);
+				if (!country) {
+					country = new Country(countryIdBytes);
+					country.name = countryNameStr;
+					country.code = countryNameStr.toLowerCase();
+					country.totalCoupons = BigInt.fromI32(0);
+				}
+				country.totalCoupons = country.totalCoupons.plus(BigInt.fromI32(1));
+				country.save();
+				location.country = countryIdBytes;
+			}
+
+			// Handle City
+			if (cityName && !cityName.isNull() && cityName.kind == JSONValueKind.STRING) {
+				let cityNameStr = cityName.toString();
+				// Create a composite string for uniqueness and then hash it
+				let cityIdInput = cityNameStr.toLowerCase();
+				if (location.country) {
+					cityIdInput = cityIdInput + '-' + location.country.toHexString();
+				}
+				let cityIdBytes = Bytes.fromByteArray(crypto.keccak256(Bytes.fromUTF8(cityIdInput)));
+				let city = City.load(cityIdBytes);
+				if (!city) {
+					city = new City(cityIdBytes);
+					city.name = cityNameStr;
+					if (region && !region.isNull() && region.kind == JSONValueKind.STRING) city.region = region.toString();
+					city.country = location.country;
+					city.totalCoupons = BigInt.fromI32(0);
+				}
+				city.totalCoupons = city.totalCoupons.plus(BigInt.fromI32(1));
+				city.save();
+				location.city = cityIdBytes;
+			}
 			
 			location.save();
 			tokenMetadata.location = location.id;

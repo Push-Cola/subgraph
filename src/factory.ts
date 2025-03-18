@@ -1,7 +1,60 @@
-import { LazyMintDeployed } from '../generated/LazyMintFactory/LazyMintFactory';
+import { LazyMintDeployed, ProjectCreated, ProjectUpdated } from '../generated/LazyMintFactory/LazyMintFactory';
 import { LazyMint1, TokenMetadata } from '../generated/templates';
 import { Coupon, User, Project } from '../generated/schema';
-import { log, BigInt } from '@graphprotocol/graph-ts';
+import { log, BigInt, Bytes } from '@graphprotocol/graph-ts';
+
+export function handleProjectCreated(event: ProjectCreated): void {
+    let user = User.load(event.params.owner);
+    if (user == null) {
+        user = new User(event.params.owner);
+        user.save();
+    }
+
+    // Create a new project with projectId
+    let projectId = Bytes.fromI32(event.params.projectId.toI32());
+    
+    // Check if the project already exists (could be created inline during LazyMintDeployed)
+    let project = Project.load(projectId);
+    if (project == null) {
+        project = new Project(projectId);
+        project.creator = user.id;
+        project.name = event.params.name;
+        project.createdAt = event.block.timestamp;
+        project.totalClaims = BigInt.fromI32(0);
+        project.uniqueClaimers = [];
+        project.totalBudgetLocked = BigInt.fromI32(0);
+        project.totalAffiliatePayments = BigInt.fromI32(0);
+        project.save();
+    } else {
+        // If the project existed (rare case), update its name
+        project.name = event.params.name;
+        project.save();
+    }
+
+    log.info('Project created with ID: {} and name: {}', [
+        event.params.projectId.toString(),
+        event.params.name
+    ]);
+}
+
+export function handleProjectUpdated(event: ProjectUpdated): void {
+    let projectId = Bytes.fromI32(event.params.projectId.toI32());
+    let project = Project.load(projectId);
+
+    if (project != null) {
+        project.name = event.params.name;
+        project.save();
+
+        log.info('Project updated with ID: {}, name: {}', [
+            event.params.projectId.toString(),
+            event.params.name
+        ]);
+    } else {
+        log.warning('Attempted to update non-existent project: {}', [
+            event.params.projectId.toString()
+        ]);
+    }
+}
 
 export function handleContractCreated(event: LazyMintDeployed): void {
     LazyMint1.create(event.params.lazyMintAddress);
@@ -12,13 +65,26 @@ export function handleContractCreated(event: LazyMintDeployed): void {
         user.save();
     }
 
-    // Create the Project entity (simple container)
-    let project = new Project(event.params.lazyMintAddress);
-    project.creator = user.id;
-    project.totalClaims = BigInt.fromI32(0);
-    project.uniqueClaimers = [];
-    project.totalBudgetLocked = BigInt.fromI32(0);
-    project.totalAffiliatePayments = BigInt.fromI32(0);
+    // Get or create the Project entity using the project ID
+    let projectId = Bytes.fromI32(event.params.projectId.toI32());
+    let project = Project.load(projectId);
+    
+    // If the project doesn't exist, create it
+    // This should be rare since the contract creates the project first,
+    // but we handle it just in case
+    if (project == null) {
+        project = new Project(projectId);
+        project.creator = user.id;
+        project.name = "Untitled Project"; // Default name
+        project.createdAt = event.block.timestamp;
+        project.totalClaims = BigInt.fromI32(0);
+        project.uniqueClaimers = [];
+        project.totalBudgetLocked = BigInt.fromI32(0);
+        project.totalAffiliatePayments = BigInt.fromI32(0);
+    }
+    
+    // Update the project's budget
+    project.totalBudgetLocked = project.totalBudgetLocked.plus(event.params.lockedBudget);
     project.save();
 
     // Create the Coupon entity with all the event information
@@ -63,8 +129,9 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     
     // Handle nullable metadata with type assertion
     let metadataStr = coupon.metadata ? (coupon.metadata as string) : 'null';
-    log.info('Coupon created with address: {} and metadata CID: {}', [
+    log.info('Coupon created with address: {} and metadata CID: {} for project: {}', [
         event.params.lazyMintAddress.toHexString(),
-        metadataStr
+        metadataStr,
+        projectId.toHexString()
     ]);
 }

@@ -12,7 +12,7 @@ dataSources:
     name: LazyMintFactory
     network: base
     source:
-      address: "0x4ED099ab3fd90CE6607C4412afa7F6f1645A63fD"
+      address: "0x03206d10B1Ef91203F6a599e75352b92a6389b22"
       abi: LazyMintFactory
       startBlock: 27337189
     provider:
@@ -23,12 +23,18 @@ dataSources:
       language: wasm/assemblyscript
       entities:
         - LazyMintDeployed
+        - ProjectCreated
+        - ProjectUpdated
       abis:
         - name: LazyMintFactory
           file: ./abis/LazyMintFactory.json
       eventHandlers:
-        - event: LazyMintDeployed(indexed address,address,string,uint256,uint256,uint256,uint256,address,uint256,uint256)
+        - event: LazyMintDeployed(indexed address,address,string,uint256,uint256,uint256,uint256,address,uint256,uint256,indexed uint256)
           handler: handleContractCreated
+        - event: ProjectCreated(indexed uint256,indexed address,string)
+          handler: handleProjectCreated
+        - event: ProjectUpdated(indexed uint256,indexed address,string)
+          handler: handleProjectUpdated
       file: ./src/factory.ts
 
 templates:
@@ -78,6 +84,10 @@ templates:
       language: wasm/assemblyscript
       entities:
         - TokenMetadata
+        - Location
+        - Attribute
+        - City
+        - Country
       file: ./src/coupon.ts
       handler: handleMetadata
       abis:
