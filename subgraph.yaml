@@ -12,9 +12,9 @@ dataSources:
     name: LazyMintFactory
     network: base
     source:
-      address: "0x03206d10B1Ef91203F6a599e75352b92a6389b22"
+      address: "0x11E7d1659f54DE21D0826105180ff3d574AE30AD"
       abi: LazyMintFactory
-      startBlock: 27337189
+      startBlock: 27756165
     provider:
       url: "https://base-mainnet.g.alchemy.com/v2/AiHJp8DqQ6baXmRekNj8FJ37igYDqsdg"
     mapping:
@@ -29,7 +29,7 @@ dataSources:
         - name: LazyMintFactory
           file: ./abis/LazyMintFactory.json
       eventHandlers:
-        - event: LazyMintDeployed(indexed address,address,string,uint256,uint256,uint256,uint256,address,uint256,uint256,indexed uint256)
+        - event: LazyMintDeployed(indexed address,address,string,uint256,uint256,uint256,uint256,uint256,address,uint256,uint256,indexed uint256)
           handler: handleContractCreated
         - event: ProjectCreated(indexed uint256,indexed address,string)
           handler: handleProjectCreated

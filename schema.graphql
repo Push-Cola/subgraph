@@ -9,6 +9,7 @@ type User @entity(immutable: true) {
 
 type Project @entity(immutable: false) {
   id: Bytes!
+  projectId: BigInt!
   creator: User!
   name: String!
   createdAt: BigInt!
@@ -29,7 +30,8 @@ type Coupon @entity(immutable: false) {
   uri: String!
   maxSupply: BigInt!
   lockedBudget: BigInt!
-  claimExpiration: BigInt!
+  claimStart: BigInt!
+  claimEnd: BigInt!
   redeemExpiration: BigInt!
   currencyAddress: Bytes!
   fee: BigInt!
@@ -65,9 +67,6 @@ type TokenMetadata @entity {
   visibility: String
   category: String
   location: Location
-  claimStartDate: BigInt
-  claimExpirationDate: BigInt
-  couponExpirationDate: BigInt
   attributes: [Attribute!]
 }
 

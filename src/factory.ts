@@ -3,6 +3,13 @@ import { LazyMint1, TokenMetadata } from '../generated/templates';
 import { Coupon, User, Project } from '../generated/schema';
 import { log, BigInt, Bytes } from '@graphprotocol/graph-ts';
 
+// Helper function to generate a unique project ID
+function generateProjectId(projectId: BigInt): Bytes {
+    // Create a unique ID by concatenating the project ID with a prefix
+    return Bytes.fromUTF8('project-').concatI32(projectId.toI32());
+}
+
+// La única función que debe crear proyectos
 export function handleProjectCreated(event: ProjectCreated): void {
     let user = User.load(event.params.owner);
     if (user == null) {
@@ -10,13 +17,22 @@ export function handleProjectCreated(event: ProjectCreated): void {
         user.save();
     }
 
-    // Create a new project with projectId
-    let projectId = Bytes.fromI32(event.params.projectId.toI32());
+    // Generate a unique project ID
+    let projectId = generateProjectId(event.params.projectId);
     
-    // Check if the project already exists (could be created inline during LazyMintDeployed)
+    log.info('Project ID from event: {}', [event.params.projectId.toString()]);
+    log.info('Generated project ID: {}', [projectId.toHexString()]);
+    
+    // Check if the project already exists
     let project = Project.load(projectId);
     if (project == null) {
+        log.info('Creating new project with ID: {} and name: {}', [
+            event.params.projectId.toString(),
+            event.params.name
+        ]);
+        
         project = new Project(projectId);
+        project.projectId = event.params.projectId;
         project.creator = user.id;
         project.name = event.params.name;
         project.createdAt = event.block.timestamp;
@@ -25,20 +41,40 @@ export function handleProjectCreated(event: ProjectCreated): void {
         project.totalBudgetLocked = BigInt.fromI32(0);
         project.totalAffiliatePayments = BigInt.fromI32(0);
         project.save();
+        
+        log.info('Successfully created project with ID: {} and entityID: {}', [
+            event.params.projectId.toString(),
+            projectId.toHexString()
+        ]);
     } else {
-        // If the project existed (rare case), update its name
-        project.name = event.params.name;
-        project.save();
+        // Si ya existe, actualizamos solo si es necesario
+        if (project.name == "") {
+            project.name = event.params.name;
+            project.save();
+            log.info('Updated empty project name with ID: {} to: {}', [
+                event.params.projectId.toString(),
+                event.params.name
+            ]);
+        } else {
+            // Solo actualizar si hay un cambio real
+            if (project.name != event.params.name) {
+                project.name = event.params.name;
+                project.save();
+                log.info('Updated project name with ID: {} to: {}', [
+                    event.params.projectId.toString(),
+                    event.params.name
+                ]);
+            } else {
+                log.info('Ignoring duplicate ProjectCreated event for project ID: {}', [
+                    event.params.projectId.toString()
+                ]);
+            }
+        }
     }
-
-    log.info('Project created with ID: {} and name: {}', [
-        event.params.projectId.toString(),
-        event.params.name
-    ]);
 }
 
 export function handleProjectUpdated(event: ProjectUpdated): void {
-    let projectId = Bytes.fromI32(event.params.projectId.toI32());
+    let projectId = generateProjectId(event.params.projectId);
     let project = Project.load(projectId);
 
     if (project != null) {
@@ -50,6 +86,7 @@ export function handleProjectUpdated(event: ProjectUpdated): void {
             event.params.name
         ]);
     } else {
+        // Si el proyecto no existe, registramos el error pero NO lo creamos
         log.warning('Attempted to update non-existent project: {}', [
             event.params.projectId.toString()
         ]);
@@ -65,23 +102,25 @@ export function handleContractCreated(event: LazyMintDeployed): void {
         user.save();
     }
 
-    // Get or create the Project entity using the project ID
-    let projectId = Bytes.fromI32(event.params.projectId.toI32());
+    // Generate a unique project ID
+    let projectId = generateProjectId(event.params.projectId);
+    
+    log.info('LazyMintDeployed - Project ID from event: {}', [event.params.projectId.toString()]);
+    log.info('LazyMintDeployed - Generated project ID: {}', [projectId.toHexString()]);
+    
     let project = Project.load(projectId);
     
-    // If the project doesn't exist, create it
-    // This should be rare since the contract creates the project first,
-    // but we handle it just in case
+    // IMPORTANTE: No creamos proyectos en este handler
     if (project == null) {
-        project = new Project(projectId);
-        project.creator = user.id;
-        project.name = "Untitled Project"; // Default name
-        project.createdAt = event.block.timestamp;
-        project.totalClaims = BigInt.fromI32(0);
-        project.uniqueClaimers = [];
-        project.totalBudgetLocked = BigInt.fromI32(0);
-        project.totalAffiliatePayments = BigInt.fromI32(0);
+        log.warning('Project not found in LazyMintDeployed handler with ID: {}. Ignoring event.', [
+            event.params.projectId.toString()
+        ]);
+        return; // Salimos para evitar crear coupons sin proyecto
     }
+    
+    log.info('Found existing project with ID: {} for LazyMintDeployed', [
+        event.params.projectId.toString()
+    ]);
     
     // Update the project's budget
     project.totalBudgetLocked = project.totalBudgetLocked.plus(event.params.lockedBudget);
@@ -95,7 +134,8 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     coupon.uri = event.params.uri;
     coupon.maxSupply = event.params.maxSupply;
     coupon.lockedBudget = event.params.lockedBudget;
-    coupon.claimExpiration = event.params.claimExpiration;
+    coupon.claimStart = event.params.claimStart;
+    coupon.claimEnd = event.params.claimEnd;
     coupon.redeemExpiration = event.params.redeemExpiration;
     coupon.currencyAddress = event.params.currencyAddress;
     coupon.fee = event.params.fee;

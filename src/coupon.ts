@@ -49,10 +49,7 @@ export function handleMetadata(content: Bytes): void {
 			locationObj = location.toObject();
 		}
 
-		// Dates
-		const claimStartDate = value.get('claimStartDate');
-		const claimExpirationDate = value.get('claimExpirationDate');
-		const couponExpirationDate = value.get('couponExpirationDate');
+	
 
 		// Attributes array
 		const attributes = value.get('attributes');
@@ -134,10 +131,6 @@ export function handleMetadata(content: Bytes): void {
 			tokenMetadata.location = location.id;
 		}
 
-		// Set date fields
-		if (claimStartDate && !claimStartDate.isNull() && claimStartDate.kind == JSONValueKind.NUMBER) tokenMetadata.claimStartDate = claimStartDate.toBigInt();
-		if (claimExpirationDate && !claimExpirationDate.isNull() && claimExpirationDate.kind == JSONValueKind.NUMBER) tokenMetadata.claimExpirationDate = claimExpirationDate.toBigInt();
-		if (couponExpirationDate && !couponExpirationDate.isNull() && couponExpirationDate.kind == JSONValueKind.NUMBER) tokenMetadata.couponExpirationDate = couponExpirationDate.toBigInt();
 
 		// Process attributes
 		if (attributesArray) {
@@ -167,7 +160,7 @@ export function handleMetadata(content: Bytes): void {
 	tokenMetadata.save();
 }
 
-export function handleAffiliateCreated(event: AffiliateRegistered): void {
+export function handleAffiliateRegistered(event: AffiliateRegistered): void {
 	let user = User.load(event.params.user);
 	if (!user) {
 		user = new User(event.params.user);
