@@ -1,7 +1,7 @@
 type User @entity(immutable: true) {
   id: Bytes!
   projects: [Project!]! @derivedFrom(field: "creator")
-  ownedCoupons: [Coupon!]! @derivedFrom(field: "owner")
+  ownedCoupons: [Coupon!]! @derivedFrom(field: "owners")
   claimedCoupons: [TokenClaimed!]! @derivedFrom(field: "receiver")
   claimedInProjects: [Project!]! @derivedFrom(field: "uniqueClaimers")
   affiliateFor: [Affiliate!]! @derivedFrom(field: "user")
@@ -24,7 +24,8 @@ type Project @entity(immutable: false) {
 type Coupon @entity(immutable: false) {
   id: Bytes!
   project: Project!
-  owner: User!
+  creator: User!
+  owners: [User!]!
   metadata: TokenMetadata
   lazyMintAddress: Bytes!
   uri: String!
@@ -66,8 +67,13 @@ type TokenMetadata @entity {
   textColor: String
   visibility: String
   category: String
+  externalUrl: String
+  animationUrl: String
+  coupon: Coupon! @derivedFrom(field: "metadata")
   location: Location
   attributes: [Attribute!]
+  createdAt: BigInt
+  updatedAt: BigInt
 }
 
 type Location @entity {
@@ -75,37 +81,20 @@ type Location @entity {
   address1: String
   address2: String
   formattedAddress: String
-  city: City!
+  city: String
   region: String
   postalCode: String
-  country: Country!
+  country: String
   lat: BigDecimal
   lng: BigDecimal
-  coupons: [TokenMetadata!]! @derivedFrom(field: "location")
-}
-
-type City @entity {
-  id: Bytes!
-  name: String!
-  region: String
-  country: Country!
-  locations: [Location!]! @derivedFrom(field: "city")
-  totalCoupons: BigInt!
-}
-
-type Country @entity {
-  id: Bytes!
-  name: String!
-  code: String!
-  cities: [City!]! @derivedFrom(field: "country")
-  locations: [Location!]! @derivedFrom(field: "country")
-  totalCoupons: BigInt!
+  metadata: [TokenMetadata!]! @derivedFrom(field: "location")
 }
 
 type Attribute @entity {
   id: ID!
   traitType: String
   value: String
+  metadata: TokenMetadata
 }
 
 type CouponRedeemed @entity(immutable: true) {

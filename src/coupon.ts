@@ -1,5 +1,5 @@
-import { TokenMetadata, Affiliate, CouponRedeemed, TokenClaimed, Location, Attribute, City, Country } from '../generated/schema';
-import { Bytes, dataSource, json, log, BigInt, TypedMap, Value, BigDecimal, JSONValue, JSONValueKind, crypto } from '@graphprotocol/graph-ts';
+import { TokenMetadata, Affiliate, CouponRedeemed, TokenClaimed, Location, Attribute } from '../generated/schema';
+import { Bytes, dataSource, json, log, BigInt, TypedMap, Value, BigDecimal, JSONValue, JSONValueKind, crypto, store } from '@graphprotocol/graph-ts';
 import { Coupon, User, Project } from '../generated/schema';
 import { 
 	AffiliateRegistered,
@@ -24,6 +24,7 @@ export function handleMetadata(content: Bytes): void {
 		return;
 	}
 
+	// Add retry logic for JSON parsing
 	let jsonResult = json.try_fromBytes(content);
 	if (jsonResult.isError) {
 		log.error('Failed to parse JSON for token {}', [tokenId]);
@@ -32,42 +33,34 @@ export function handleMetadata(content: Bytes): void {
 	}
 
 	let value = jsonResult.value.toObject();
-	if (value) {
-		// Basic fields
-		const name = value.get('name');
-		const description = value.get('description');
-		const image = value.get('image');
-		const backgroundColor = value.get('backgroundColor');
-		const textColor = value.get('textColor');
-		const visibility = value.get('visibility');
-		const category = value.get('category');
+	if (!value) {
+		log.error('Invalid metadata object for token {}', [tokenId]);
+		tokenMetadata.save();
+		return;
+	}
 
-		// Location object
-		const location = value.get('location');
-		let locationObj: TypedMap<string, JSONValue> | null = null;
-		if (location && !location.isNull()) {
-			locationObj = location.toObject();
-		}
+	// Basic fields
+	const name = value.get('name');
+	const description = value.get('description');
+	const image = value.get('image');
+	const backgroundColor = value.get('backgroundColor');
+	const textColor = value.get('textColor');
+	const visibility = value.get('visibility');
+	const category = value.get('category');
 
-	
+	// Set basic fields with null checks
+	if (name && !name.isNull() && name.kind == JSONValueKind.STRING) tokenMetadata.name = name.toString();
+	if (description && !description.isNull() && description.kind == JSONValueKind.STRING) tokenMetadata.description = description.toString();
+	if (image && !image.isNull() && image.kind == JSONValueKind.STRING) tokenMetadata.image = image.toString();
+	if (backgroundColor && !backgroundColor.isNull() && backgroundColor.kind == JSONValueKind.STRING) tokenMetadata.backgroundColor = backgroundColor.toString();
+	if (textColor && !textColor.isNull() && textColor.kind == JSONValueKind.STRING) tokenMetadata.textColor = textColor.toString();
+	if (visibility && !visibility.isNull() && visibility.kind == JSONValueKind.STRING) tokenMetadata.visibility = visibility.toString();
+	if (category && !category.isNull() && category.kind == JSONValueKind.STRING) tokenMetadata.category = category.toString();
 
-		// Attributes array
-		const attributes = value.get('attributes');
-		let attributesArray: Array<JSONValue> | null = null;
-		if (attributes && !attributes.isNull()) {
-			attributesArray = attributes.toArray();
-		}
-
-		// Set basic fields
-		if (name && !name.isNull() && name.kind == JSONValueKind.STRING) tokenMetadata.name = name.toString();
-		if (description && !description.isNull() && description.kind == JSONValueKind.STRING) tokenMetadata.description = description.toString();
-		if (image && !image.isNull() && image.kind == JSONValueKind.STRING) tokenMetadata.image = image.toString();
-		if (backgroundColor && !backgroundColor.isNull() && backgroundColor.kind == JSONValueKind.STRING) tokenMetadata.backgroundColor = backgroundColor.toString();
-		if (textColor && !textColor.isNull() && textColor.kind == JSONValueKind.STRING) tokenMetadata.textColor = textColor.toString();
-		if (visibility && !visibility.isNull() && visibility.kind == JSONValueKind.STRING) tokenMetadata.visibility = visibility.toString();
-		if (category && !category.isNull() && category.kind == JSONValueKind.STRING) tokenMetadata.category = category.toString();
-
-		// Set location fields if available
+	// Location object with error handling
+	const location = value.get('location');
+	if (location && !location.isNull()) {
+		let locationObj = location.toObject();
 		if (locationObj) {
 			let location = new Location(tokenId + '-location');
 			const address1 = locationObj.get('address1');
@@ -87,56 +80,27 @@ export function handleMetadata(content: Bytes): void {
 			if (postalCode && !postalCode.isNull() && postalCode.kind == JSONValueKind.STRING) location.postalCode = postalCode.toString();
 			if (lat && !lat.isNull() && lat.kind == JSONValueKind.STRING) location.lat = BigDecimal.fromString(lat.toString());
 			if (lng && !lng.isNull() && lng.kind == JSONValueKind.STRING) location.lng = BigDecimal.fromString(lng.toString());
+			if (countryName && !countryName.isNull() && countryName.kind == JSONValueKind.STRING) location.country = countryName.toString();
+			if (cityName && !cityName.isNull() && cityName.kind == JSONValueKind.STRING) location.city = cityName.toString();
 
-			// Handle Country
-			if (countryName && !countryName.isNull() && countryName.kind == JSONValueKind.STRING) {
-				let countryNameStr = countryName.toString();
-				// Create a hash-based ID for the country
-				let countryIdBytes = Bytes.fromByteArray(crypto.keccak256(Bytes.fromUTF8(countryNameStr.toLowerCase())));
-				let country = Country.load(countryIdBytes);
-				if (!country) {
-					country = new Country(countryIdBytes);
-					country.name = countryNameStr;
-					country.code = countryNameStr.toLowerCase();
-					country.totalCoupons = BigInt.fromI32(0);
-				}
-				country.totalCoupons = country.totalCoupons.plus(BigInt.fromI32(1));
-				country.save();
-				location.country = countryIdBytes;
-			}
-
-			// Handle City
-			if (cityName && !cityName.isNull() && cityName.kind == JSONValueKind.STRING) {
-				let cityNameStr = cityName.toString();
-				// Create a composite string for uniqueness and then hash it
-				let cityIdInput = cityNameStr.toLowerCase();
-				if (location.country) {
-					cityIdInput = cityIdInput + '-' + location.country.toHexString();
-				}
-				let cityIdBytes = Bytes.fromByteArray(crypto.keccak256(Bytes.fromUTF8(cityIdInput)));
-				let city = City.load(cityIdBytes);
-				if (!city) {
-					city = new City(cityIdBytes);
-					city.name = cityNameStr;
-					if (region && !region.isNull() && region.kind == JSONValueKind.STRING) city.region = region.toString();
-					city.country = location.country;
-					city.totalCoupons = BigInt.fromI32(0);
-				}
-				city.totalCoupons = city.totalCoupons.plus(BigInt.fromI32(1));
-				city.save();
-				location.city = cityIdBytes;
-			}
-			
 			location.save();
 			tokenMetadata.location = location.id;
 		}
+	}
 
-
-		// Process attributes
+	// Process attributes without try-catch
+	const attributes = value.get('attributes');
+	if (attributes && !attributes.isNull()) {
+		let attributesArray = attributes.toArray();
 		if (attributesArray) {
 			let processedAttributes: string[] = [];
 			for (let i = 0; i < attributesArray.length; i++) {
 				let attribute = attributesArray[i].toObject();
+				if (!attribute) {
+					log.warning('Invalid attribute at index {} for token {}', [i.toString(), tokenId]);
+					continue;
+				}
+				
 				let traitType = attribute.get('trait_type');
 				let traitValue = attribute.get('value');
 				
@@ -151,12 +115,9 @@ export function handleMetadata(content: Bytes): void {
 			}
 			tokenMetadata.attributes = processedAttributes;
 		}
-
-		log.info('Successfully processed metadata for token {}', [tokenId]);
-	} else {
-		log.error('Invalid metadata object for token {}', [tokenId]);
 	}
 
+	log.info('Successfully processed metadata for token {}', [tokenId]);
 	tokenMetadata.save();
 }
 
@@ -255,6 +216,11 @@ export function handleCouponRedeemed(event: CouponRedeemedEvent): void {
 	// Update the Coupon entity's isRedeemed field
 	coupon.isRedeemed = true;
 
+	// Ensure project.totalAffiliatePayments is initialized
+	if (!project.totalAffiliatePayments) {
+		project.totalAffiliatePayments = BigInt.fromI32(0);
+	}
+
 	// Save all entities
 	entity.save();
 	project.save();
@@ -337,7 +303,9 @@ export function handleTokenClaimed(event: TokenClaimedEvent): void {
 	}
 	
 	// Update ownership
-	coupon.owner = receiver.id;
+	let owners = coupon.owners;
+	owners.push(receiver.id);
+	coupon.owners = owners;
 
 	entity.timestamp = event.params.timestamp;
 	entity.blockNumber = event.block.number;
@@ -349,3 +317,4 @@ export function handleTokenClaimed(event: TokenClaimedEvent): void {
 	project.save();
 	coupon.save();
 }
+

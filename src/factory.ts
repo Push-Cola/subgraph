@@ -129,7 +129,8 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     // Create the Coupon entity with all the event information
     let coupon = new Coupon(event.params.lazyMintAddress);
     coupon.project = project.id;
-    coupon.owner = user.id;  // Initially, creator is also the owner
+    coupon.creator = user.id;  // Set the creator
+    coupon.owners = [];  // Initialize owners array with creator
     coupon.lazyMintAddress = event.params.lazyMintAddress;
     coupon.uri = event.params.uri;
     coupon.maxSupply = event.params.maxSupply;
