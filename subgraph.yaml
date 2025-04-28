@@ -12,9 +12,9 @@ dataSources:
     name: LazyMintFactory
     network: base
     source:
-      address: "0x66D8310e401cb4EF2b587C3b0E97Ff3FccA6E014"
+      address: "0x2C8Ea2AbeAE3a3b9AbC177c707A3a881beF1F42B"
       abi: LazyMintFactory
-      startBlock: 28305408
+      startBlock: 28751254
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -46,31 +46,18 @@ templates:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - ApprovalForAll
-        - BatchMetadataUpdate
-        - ContractURIUpdated
         - CouponRedeemed
-        - DefaultRoyalty
-        - MetadataFrozen
-        - OwnerUpdated
-        - RoyaltyForToken
         - TokenClaimed
-        - TokensClaimed
-        - TokensLazyMinted
-        - TransferBatch
-        - TransferSingle
-        - URI
         - AffiliateRegistered
-
       abis:
         - name: LazyMint1
           file: ./abis/LazyMint1.json
       eventHandlers:
         - event: CouponRedeemed(indexed address,indexed uint256,address,uint256,address,uint256,address)
           handler: handleCouponRedeemed
-        - event: TokenClaimed(indexed address,indexed address,indexed uint256,uint256,address,address,uint256)
+        - event: TokenClaimed(indexed address,indexed address,indexed uint256,address,address,uint256)
           handler: handleTokenClaimed
-        - event: AffiliateRegistered(indexed address,uint256,address,uint256,uint256)
+        - event: AffiliateRegistered(indexed address,address,uint256)
           handler: handleAffiliateRegistered
       file: ./src/coupon.ts
   - name: TokenMetadata

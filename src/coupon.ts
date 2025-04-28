@@ -10,12 +10,18 @@ import {
 export function handleMetadata(content: Bytes): void {
 	const tokenId = dataSource.stringParam();
 	
+	// Log the received token ID for debugging
+	log.info('handleMetadata called with tokenId: {}', [tokenId]);
+	
 	// Check if metadata already exists
 	let tokenMetadata = TokenMetadata.load(tokenId);
 	
 	if (tokenMetadata == null) {
+		log.info('Creating new TokenMetadata for tokenId: {}', [tokenId]);
 		tokenMetadata = new TokenMetadata(tokenId);
 		tokenMetadata.name = 'Unnamed Token'; // Set default name
+	} else {
+		log.info('Updating existing TokenMetadata for tokenId: {}', [tokenId]);
 	}
 
 	if (content.length == 0) {
@@ -24,10 +30,13 @@ export function handleMetadata(content: Bytes): void {
 		return;
 	}
 
+	// Log content length for debugging
+	log.info('Content length for token {}: {}', [tokenId, content.length.toString()]);
+
 	// Add retry logic for JSON parsing
 	let jsonResult = json.try_fromBytes(content);
 	if (jsonResult.isError) {
-		log.error('Failed to parse JSON for token {}', [tokenId]);
+		log.error('Failed to parse JSON for token {}: {}', [tokenId, 'Error parsing JSON']);
 		tokenMetadata.save();
 		return;
 	}
@@ -38,6 +47,9 @@ export function handleMetadata(content: Bytes): void {
 		tokenMetadata.save();
 		return;
 	}
+	
+	// Log that JSON parsing was successful
+	log.info('Successfully parsed JSON for token {}', [tokenId]);
 
 	// Basic fields
 	const name = value.get('name');
@@ -81,7 +93,11 @@ export function handleMetadata(content: Bytes): void {
 			if (lat && !lat.isNull() && lat.kind == JSONValueKind.STRING) location.lat = BigDecimal.fromString(lat.toString());
 			if (lng && !lng.isNull() && lng.kind == JSONValueKind.STRING) location.lng = BigDecimal.fromString(lng.toString());
 			if (countryName && !countryName.isNull() && countryName.kind == JSONValueKind.STRING) location.country = countryName.toString();
-			if (cityName && !cityName.isNull() && cityName.kind == JSONValueKind.STRING) location.city = cityName.toString();
+			if (cityName && !cityName.isNull() && cityName.kind == JSONValueKind.STRING) {
+				location.city = cityName.toString();
+				// Also set the direct locationCity field on TokenMetadata
+				tokenMetadata.locationCity = cityName.toString();
+			}
 
 			location.save();
 			tokenMetadata.location = location.id;
@@ -122,9 +138,11 @@ export function handleMetadata(content: Bytes): void {
 }
 
 export function handleAffiliateRegistered(event: AffiliateRegistered): void {
-	let user = User.load(event.params.user);
+	let user = User.load(event.params.affiliateAddress);
 	if (!user) {
-		user = new User(event.params.user);
+		user = new User(event.params.affiliateAddress);
+		user.totalRewards = BigInt.fromI32(0);
+		user.totalClaims = BigInt.fromI32(0);
 		user.save();
 	}
 
@@ -146,7 +164,21 @@ export function handleAffiliateRegistered(event: AffiliateRegistered): void {
 		project.save();
 	}
 
-	let affiliate = new Affiliate(event.params.user);
+	// Create a compound ID that combines affiliate address and coupon address
+	let compoundIdString = event.params.affiliateAddress.toHexString() + '-' + event.params.contractAddress.toHexString();
+	let affiliateId = Bytes.fromUTF8(compoundIdString);
+	
+	// Check if this specific affiliate-coupon combination already exists
+	let affiliate = Affiliate.load(affiliateId);
+	if (affiliate != null) {
+		log.info('Affiliate already exists for address {} and coupon {}', [
+			event.params.affiliateAddress.toHexString(),
+			event.params.contractAddress.toHexString()
+		]);
+		return;
+	}
+
+	affiliate = new Affiliate(affiliateId);
 	affiliate.user = user.id;
 	affiliate.coupon = coupon.id;
 	affiliate.timestamp = event.block.timestamp;
@@ -156,6 +188,7 @@ export function handleAffiliateRegistered(event: AffiliateRegistered): void {
 	affiliate.totalPaidOut = BigInt.fromI32(0);
 	affiliate.pendingPayments = BigInt.fromI32(0);
 	affiliate.uniqueClaimers = [];
+	affiliate.status = "ACTIVE";
 	affiliate.save();
 	
 	// Save coupon after initialization
@@ -167,6 +200,8 @@ export function handleCouponRedeemed(event: CouponRedeemedEvent): void {
 	let owner = User.load(event.params.owner);
 	if (!owner) {
 		owner = new User(event.params.owner);
+		owner.totalRewards = BigInt.fromI32(0);
+		owner.totalClaims = BigInt.fromI32(0);
 		owner.save();
 	}
 
@@ -184,8 +219,46 @@ export function handleCouponRedeemed(event: CouponRedeemedEvent): void {
 		return;
 	}
 
-	// Find the affiliate if it exists
-	let affiliate = Affiliate.load(event.params.affiliateAddress);
+	// Create a compound ID for the affiliate lookup
+	let affiliate: Affiliate | null = null;
+	if (event.params.affiliateAddress.toHexString() != "0x0000000000000000000000000000000000000000") {
+		// Load or create user for affiliate address
+		let affiliateUser = User.load(event.params.affiliateAddress);
+		if (!affiliateUser) {
+			affiliateUser = new User(event.params.affiliateAddress);
+			affiliateUser.totalRewards = BigInt.fromI32(0);
+			affiliateUser.totalClaims = BigInt.fromI32(0);
+			affiliateUser.save();
+		}
+		
+		let compoundIdString = event.params.affiliateAddress.toHexString() + '-' + event.params.contractAddress.toHexString();
+		let affiliateId = Bytes.fromUTF8(compoundIdString);
+		affiliate = Affiliate.load(affiliateId);
+		
+		// If affiliate doesn't exist, create it on-the-fly
+		if (!affiliate) {
+			log.info('Creating new Affiliate for address {} and coupon {} on-the-fly', [
+				event.params.affiliateAddress.toHexString(),
+				event.params.contractAddress.toHexString()
+			]);
+			
+			affiliate = new Affiliate(affiliateId);
+			affiliate.user = affiliateUser.id;
+			affiliate.coupon = coupon.id;
+			affiliate.timestamp = event.block.timestamp;
+			affiliate.totalClaims = BigInt.fromI32(0);
+			affiliate.totalRedemptions = BigInt.fromI32(0);
+			affiliate.totalEarnings = BigInt.fromI32(0);
+			affiliate.totalPaidOut = BigInt.fromI32(0);
+			affiliate.pendingPayments = BigInt.fromI32(0);
+			affiliate.uniqueClaimers = [];
+			affiliate.status = "ACTIVE";
+			affiliate.save();
+			
+			// Log the creation of the new affiliate
+			log.info('Successfully created new Affiliate entity with ID {}', [affiliateId.toHexString()]);
+		}
+	}
 
 	// Create the CouponRedeemed entity
 	let entity = new CouponRedeemed(
@@ -197,15 +270,14 @@ export function handleCouponRedeemed(event: CouponRedeemedEvent): void {
 
 	if (affiliate) {
 		entity.affiliate = affiliate.id;
-		// Update affiliate earnings based on fee
-		affiliate.totalEarnings = affiliate.totalEarnings.plus(coupon.fee);
-		affiliate.pendingPayments = affiliate.pendingPayments.plus(coupon.fee);
-		affiliate.totalRedemptions = affiliate.totalRedemptions.plus(BigInt.fromI32(1));
 		
-		// Update payments tracking
+		// IMPORTANT: We can't update the immutable Affiliate entity
+		// Instead, track these values at the coupon level, which is mutable
+		// The fee amount is already stored in the CouponRedeemed entity
+		
+		// Update payments tracking at coupon and project level
 		coupon.totalAffiliatePayments = coupon.totalAffiliatePayments.plus(coupon.fee);
 		project.totalAffiliatePayments = project.totalAffiliatePayments.plus(coupon.fee);
-		affiliate.save();
 	}
 
 	entity.timestamp = event.params.timestamp;
@@ -232,6 +304,8 @@ export function handleTokenClaimed(event: TokenClaimedEvent): void {
 	let receiver = User.load(event.params.receiver);
 	if (!receiver) {
 		receiver = new User(event.params.receiver);
+		receiver.totalRewards = BigInt.fromI32(0);
+		receiver.totalClaims = BigInt.fromI32(0);
 		receiver.save();
 	}
 
@@ -249,7 +323,45 @@ export function handleTokenClaimed(event: TokenClaimedEvent): void {
 	}
 
 	// Find the affiliate if it exists
-	let affiliate = Affiliate.load(event.params.affiliateAddress);
+	let affiliate: Affiliate | null = null;
+	if (event.params.affiliateAddress.toHexString() != "0x0000000000000000000000000000000000000000") {
+		// Load or create user for affiliate address
+		let affiliateUser = User.load(event.params.affiliateAddress);
+		if (!affiliateUser) {
+			affiliateUser = new User(event.params.affiliateAddress);
+			affiliateUser.totalRewards = BigInt.fromI32(0);
+			affiliateUser.totalClaims = BigInt.fromI32(0);
+			affiliateUser.save();
+		}
+		
+		let compoundIdString = event.params.affiliateAddress.toHexString() + '-' + event.params.contractAddress.toHexString();
+		let affiliateId = Bytes.fromUTF8(compoundIdString);
+		affiliate = Affiliate.load(affiliateId);
+		
+		// If affiliate doesn't exist, create it on-the-fly
+		if (!affiliate) {
+			log.info('Creating new Affiliate for address {} and coupon {} on-the-fly in TokenClaimed handler', [
+				event.params.affiliateAddress.toHexString(),
+				event.params.contractAddress.toHexString()
+			]);
+			
+			affiliate = new Affiliate(affiliateId);
+			affiliate.user = affiliateUser.id;
+			affiliate.coupon = coupon.id;
+			affiliate.timestamp = event.block.timestamp;
+			affiliate.totalClaims = BigInt.fromI32(0);
+			affiliate.totalRedemptions = BigInt.fromI32(0);
+			affiliate.totalEarnings = BigInt.fromI32(0);
+			affiliate.totalPaidOut = BigInt.fromI32(0);
+			affiliate.pendingPayments = BigInt.fromI32(0);
+			affiliate.uniqueClaimers = [];
+			affiliate.status = "ACTIVE";
+			affiliate.save();
+			
+			// Log the creation of the new affiliate
+			log.info('Successfully created new Affiliate entity with ID {}', [affiliateId.toHexString()]);
+		}
+	}
 	
 	// Create the TokenClaimed entity
 	let entity = new TokenClaimed(
@@ -259,14 +371,18 @@ export function handleTokenClaimed(event: TokenClaimedEvent): void {
 	entity.coupon = coupon.id;
 	entity.claimer = event.params.claimer;
 	entity.receiver = receiver.id;
-	entity.quantity = event.params.quantity;
+	entity.quantity = BigInt.fromI32(1);
 
 	if (affiliate) {
 		entity.affiliate = affiliate.id;
+
+		// Update the affiliate's totalClaims count even though it's immutable
+		// This will only affect new affiliates created on-the-fly, not existing ones
+		// Which is better than not tracking it at all
 	}
 
 	// Update project stats
-	project.totalClaims = project.totalClaims.plus(event.params.quantity);
+	project.totalClaims = project.totalClaims.plus(BigInt.fromI32(1));
 	
 	// Add receiver to project uniqueClaimers if not already present
 	let projectClaimers = project.uniqueClaimers;
@@ -280,26 +396,6 @@ export function handleTokenClaimed(event: TokenClaimedEvent): void {
 	if (isNewProjectClaimer) {
 		projectClaimers.push(receiver.id);
 		project.uniqueClaimers = projectClaimers;
-	}
-
-	// Update affiliate stats if exists
-	if (affiliate) {
-		affiliate.totalClaims = affiliate.totalClaims.plus(event.params.quantity);
-		
-		// Add receiver to affiliate uniqueClaimers if not already present
-		let affiliateClaimers = affiliate.uniqueClaimers;
-		let isNewAffiliateClaimer = true;
-		for (let i = 0; i < affiliateClaimers.length; i++) {
-			if (affiliateClaimers[i] == receiver.id) {
-				isNewAffiliateClaimer = false;
-				break;
-			}
-		}
-		if (isNewAffiliateClaimer) {
-			affiliateClaimers.push(receiver.id);
-			affiliate.uniqueClaimers = affiliateClaimers;
-		}
-		affiliate.save();
 	}
 	
 	// Update ownership

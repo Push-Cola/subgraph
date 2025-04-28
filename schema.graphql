@@ -1,10 +1,12 @@
-type User @entity(immutable: true) {
+type User @entity(immutable: false) {
   id: Bytes!
   projects: [Project!]! @derivedFrom(field: "creator")
   ownedCoupons: [Coupon!]! @derivedFrom(field: "owners")
   claimedCoupons: [TokenClaimed!]! @derivedFrom(field: "receiver")
   claimedInProjects: [Project!]! @derivedFrom(field: "uniqueClaimers")
   affiliateFor: [Affiliate!]! @derivedFrom(field: "user")
+  totalRewards: BigInt!
+  totalClaims: BigInt!
 }
 
 type Project @entity(immutable: false) {
@@ -19,6 +21,9 @@ type Project @entity(immutable: false) {
   totalClaims: BigInt!
   totalBudgetLocked: BigInt!
   totalAffiliatePayments: BigInt!
+  status: String!
+  maxBudget: BigInt!
+  remainingBudget: BigInt!
 }
 
 type Coupon @entity(immutable: false) {
@@ -42,6 +47,9 @@ type Coupon @entity(immutable: false) {
   affiliates: [Affiliate!]! @derivedFrom(field: "coupon")
   claims: [TokenClaimed!]! @derivedFrom(field: "coupon")
   redemptions: [CouponRedeemed!]! @derivedFrom(field: "coupon")
+  remainingSupply: BigInt!
+  status: String!
+  totalClaims: BigInt!
 }
 
 type Affiliate @entity(immutable: true) {
@@ -56,9 +64,11 @@ type Affiliate @entity(immutable: true) {
   totalEarnings: BigInt!
   totalPaidOut: BigInt!
   pendingPayments: BigInt!
+  status: String!
+  lastClaimTimestamp: BigInt
 }
 
-type TokenMetadata @entity {
+type TokenMetadata @entity(immutable: false) {
   id: ID!
   name: String!
   description: String
@@ -71,12 +81,13 @@ type TokenMetadata @entity {
   animationUrl: String
   coupon: Coupon! @derivedFrom(field: "metadata")
   location: Location
+  locationCity: String
   attributes: [Attribute!]
   createdAt: BigInt
   updatedAt: BigInt
 }
 
-type Location @entity {
+type Location @entity(immutable: false) {
   id: ID!
   address1: String
   address2: String
@@ -90,7 +101,7 @@ type Location @entity {
   metadata: [TokenMetadata!]! @derivedFrom(field: "location")
 }
 
-type Attribute @entity {
+type Attribute @entity(immutable: true) {
   id: ID!
   traitType: String
   value: String

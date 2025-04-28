@@ -1,49 +1,13 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "_uri",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_maxSupply",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_claimExpiration",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_redeemExpiration",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_lockedBudget",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_currencyAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_fee",
-        "type": "uint256"
-      }
-    ],
+    "inputs": [],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyInitialized",
+    "type": "error"
   },
   {
     "inputs": [],
@@ -52,7 +16,22 @@
   },
   {
     "inputs": [],
+    "name": "ClaimEndMustBeBeforeRedeemExpiration",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ClaimExpired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ClaimNotStarted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ClaimStartMustBeBeforeClaimEnd",
     "type": "error"
   },
   {
@@ -205,6 +184,16 @@
   },
   {
     "inputs": [],
+    "name": "InvalidCurrencyAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidWithdrawalAmount",
     "type": "error"
   },
@@ -221,6 +210,11 @@
   {
     "inputs": [],
     "name": "NoAffiliateAssociated",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
     "type": "error"
   },
   {
@@ -276,14 +270,8 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "user",
+        "name": "affiliateAddress",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "affiliateId",
-        "type": "uint256"
       },
       {
         "indexed": false,
@@ -295,12 +283,6 @@
         "indexed": false,
         "internalType": "uint256",
         "name": "timestamp",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "tokenId",
         "type": "uint256"
       }
     ],
@@ -435,6 +417,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "version",
+        "type": "uint64"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "previousOwner",
@@ -469,12 +464,6 @@
         "indexed": true,
         "internalType": "uint256",
         "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "quantity",
         "type": "uint256"
       },
       {
@@ -634,6 +623,25 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "affiliateReferrals",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "account",
         "type": "address"
       },
@@ -680,7 +688,33 @@
   },
   {
     "inputs": [],
-    "name": "claimExpiration",
+    "name": "calculateRequiredBudget",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claimEnd",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claimStart",
     "outputs": [
       {
         "internalType": "uint256",
@@ -708,34 +742,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_receiver",
+        "name": "affiliateAddress",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_quantity",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "affiliateId",
-        "type": "uint256"
       }
     ],
     "name": "customClaim",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "depositBudget",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -755,12 +766,89 @@
   },
   {
     "inputs": [],
-    "name": "getRequiredBudget",
+    "name": "getAvailableBudget",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_uri",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxSupply",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_claimStart",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_claimEnd",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_redeemExpiration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_lockedBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_currencyAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_fee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "isAffiliate",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -788,6 +876,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "lockBudget",
+    "outputs": [],
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -846,13 +947,8 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "owner",
+        "name": "tokenOwner",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "quantity",
-        "type": "uint256"
       }
     ],
     "name": "redeemCoupon",
@@ -1017,6 +1113,32 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "_newBudget",
+        "type": "uint256"
+      }
+    ],
+    "name": "setLockedBudgetForTesting",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "newURI",
+        "type": "string"
+      }
+    ],
+    "name": "setURI",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes4",
         "name": "interfaceId",
         "type": "bytes4"
@@ -1072,6 +1194,19 @@
   },
   {
     "inputs": [],
+    "name": "tokensWithAffiliates",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "totalSupply",
     "outputs": [
       {
@@ -1100,62 +1235,10 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_newClaimExpiration",
-        "type": "uint256"
-      }
-    ],
-    "name": "updateClaimExpiration",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_dollarAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "updateFee",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_newRedeemExpiration",
-        "type": "uint256"
-      }
-    ],
-    "name": "updateRedeemExpiration",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
         "name": "",
         "type": "uint256"
       }
     ],
-    "name": "uri",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "uri",
     "outputs": [
       {
@@ -1192,5 +1275,9 @@
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
 ]

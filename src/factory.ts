@@ -14,6 +14,8 @@ export function handleProjectCreated(event: ProjectCreated): void {
     let user = User.load(event.params.owner);
     if (user == null) {
         user = new User(event.params.owner);
+        user.totalRewards = BigInt.fromI32(0);
+        user.totalClaims = BigInt.fromI32(0);
         user.save();
     }
 
@@ -40,6 +42,9 @@ export function handleProjectCreated(event: ProjectCreated): void {
         project.uniqueClaimers = [];
         project.totalBudgetLocked = BigInt.fromI32(0);
         project.totalAffiliatePayments = BigInt.fromI32(0);
+        project.status = "active";
+        project.maxBudget = BigInt.fromI32(0);
+        project.remainingBudget = BigInt.fromI32(0);
         project.save();
         
         log.info('Successfully created project with ID: {} and entityID: {}', [
@@ -99,6 +104,8 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     let user = User.load(event.params.creator);
     if (user == null) {
         user = new User(event.params.creator);
+        user.totalRewards = BigInt.fromI32(0);
+        user.totalClaims = BigInt.fromI32(0);
         user.save();
     }
 
@@ -143,6 +150,9 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     coupon.tokenId = event.params.tokenId;
     coupon.isRedeemed = false;
     coupon.totalAffiliatePayments = BigInt.fromI32(0);
+    coupon.remainingSupply = event.params.maxSupply; // Initialize remaining supply to max supply
+    coupon.status = "active"; // Set initial status
+    coupon.totalClaims = BigInt.fromI32(0); // Initialize total claims to 0
 
     let uri = event.params.uri;
     log.info('Processing URI: {}', [uri]);
@@ -150,15 +160,25 @@ export function handleContractCreated(event: LazyMintDeployed): void {
     if (uri.startsWith('ipfs://')) {
         let cid = uri.replace('ipfs://', '');
         
-        // Handle potential path components
+        // Log the extracted CID before any manipulation
+        log.info('Extracted raw CID from URI: {}', [cid]);
+        
+        // Store the complete CID including path components
+        let fullCid = cid;
+        
+        // For the template creation, we need the base CID without path
         if (cid.includes('/')) {
             cid = cid.split('/')[0];
+            log.info('Base CID without path: {}', [cid]);
         }
         
         if (cid.length > 0) {
             log.info('Creating TokenMetadata template with CID: {}', [cid]);
             TokenMetadata.create(cid);
-            coupon.metadata = cid;
+            
+            // Store the full CID including path if it exists, otherwise just the CID
+            coupon.metadata = fullCid;
+            log.info('Stored metadata reference: {}', [fullCid]);
         } else {
             log.warning('Invalid IPFS CID extracted from URI: {}', [uri]);
         }
