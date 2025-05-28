@@ -483,6 +483,12 @@
         "internalType": "uint256",
         "name": "timestamp",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "_tokenURI",
+        "type": "string"
       }
     ],
     "name": "TokenClaimed",

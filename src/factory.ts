@@ -5,10 +5,8 @@ import { log, BigInt, Bytes } from '@graphprotocol/graph-ts';
 
 // Helper function to generate a unique project ID
 function generateProjectId(projectId: BigInt): Bytes {
-    // Create a unique ID by concatenating the project ID with a prefix
     return Bytes.fromUTF8('project-').concatI32(projectId.toI32());
 }
-
 // La única función que debe crear proyectos
 export function handleProjectCreated(event: ProjectCreated): void {
     let user = User.load(event.params.owner);

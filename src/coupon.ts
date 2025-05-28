@@ -59,6 +59,7 @@ export function handleMetadata(content: Bytes): void {
 	const textColor = value.get('textColor');
 	const visibility = value.get('visibility');
 	const category = value.get('category');
+	const promoVideo = value.get('promoVideo');
 
 	// Set basic fields with null checks
 	if (name && !name.isNull() && name.kind == JSONValueKind.STRING) tokenMetadata.name = name.toString();
@@ -68,6 +69,10 @@ export function handleMetadata(content: Bytes): void {
 	if (textColor && !textColor.isNull() && textColor.kind == JSONValueKind.STRING) tokenMetadata.textColor = textColor.toString();
 	if (visibility && !visibility.isNull() && visibility.kind == JSONValueKind.STRING) tokenMetadata.visibility = visibility.toString();
 	if (category && !category.isNull() && category.kind == JSONValueKind.STRING) tokenMetadata.category = category.toString();
+	if (promoVideo && !promoVideo.isNull() && promoVideo.kind == JSONValueKind.STRING) {
+		tokenMetadata.promoVideo = promoVideo.toString();
+		log.info('PromoVideo field saved for token {}: {}', [tokenId, promoVideo.toString()]);
+	}
 
 	// Location object with error handling
 	const location = value.get('location');

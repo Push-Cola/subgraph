@@ -79,6 +79,7 @@ type TokenMetadata @entity(immutable: false) {
   category: String
   externalUrl: String
   animationUrl: String
+  promoVideo: String
   coupon: Coupon! @derivedFrom(field: "metadata")
   location: Location
   locationCity: String

@@ -219,7 +219,8 @@ export function createTokenClaimedEvent(
   quantity: BigInt,
   affiliateAddress: Address,
   contractAddress: Address,
-  timestamp: BigInt
+  timestamp: BigInt,
+  _tokenURI: string
 ): TokenClaimed {
   let tokenClaimedEvent = changetype<TokenClaimed>(newMockEvent())
 
@@ -260,6 +261,9 @@ export function createTokenClaimedEvent(
       "timestamp",
       ethereum.Value.fromUnsignedBigInt(timestamp)
     )
+  )
+  tokenClaimedEvent.parameters.push(
+    new ethereum.EventParam("_tokenURI", ethereum.Value.fromString(_tokenURI))
   )
 
   return tokenClaimedEvent
